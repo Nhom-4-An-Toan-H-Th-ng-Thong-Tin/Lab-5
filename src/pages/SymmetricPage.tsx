@@ -9,8 +9,8 @@ interface SymmetricPageProps {
 
 const algorithms: { value: SymmetricAlgorithm; label: string; desc: string; keyInfo: string }[] = [
   { value: 'AES', label: 'AES', desc: 'Advanced Encryption Standard', keyInfo: '16, 24, or 32 bytes' },
-  { value: '3DES', label: '3DES', desc: 'Triple DES', keyInfo: '16 or 24 bytes' },
-  { value: 'DES', label: 'DES', desc: 'Data Encryption Standard', keyInfo: '8 bytes (unsafe)' },
+  { value: '3DES', label: '3DES', desc: 'Triple DES', keyInfo: '16 or 24 bytes (32 or 48 hex chars)' },
+  { value: 'DES', label: 'DES', desc: 'Data Encryption Standard', keyInfo: '8 bytes (16 hex chars) (unsafe)' },
 ];
 
 const modes: { value: SymmetricMode; label: string }[] = [
@@ -42,8 +42,12 @@ export default function SymmetricPage({ onEncrypt, onDecrypt, onGenerateKey }: S
     setResult('');
     if (!plaintext.trim()) { setError('Please enter plaintext.'); return; }
     if (!key.trim()) { setError('Please enter or generate a secret key.'); return; }
-    const output = onEncrypt(algorithm, mode, plaintext, key);
-    setResult(output);
+    try {
+      const output = onEncrypt(algorithm, mode, plaintext, key);
+      setResult(output);
+    } catch (err) {
+      setError(String(err));
+    }
   };
 
   const handleDecrypt = () => {
@@ -51,8 +55,12 @@ export default function SymmetricPage({ onEncrypt, onDecrypt, onGenerateKey }: S
     setResult('');
     if (!decryptInput.trim()) { setError('Please enter ciphertext.'); return; }
     if (!decryptKey.trim()) { setError('Please enter the secret key.'); return; }
-    const output = onDecrypt(algorithm, mode, decryptInput, decryptKey);
-    setResult(output);
+    try {
+      const output = onDecrypt(algorithm, mode, decryptInput, decryptKey);
+      setResult(output);
+    } catch (err) {
+      setError(String(err));
+    }
   };
 
   const handleCopy = () => {
