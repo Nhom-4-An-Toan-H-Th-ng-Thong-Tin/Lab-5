@@ -9,8 +9,8 @@ interface SymmetricPageProps {
 
 const algorithms: { value: SymmetricAlgorithm; label: string; desc: string; keyInfo: string }[] = [
   { value: 'AES', label: 'AES', desc: 'Advanced Encryption Standard', keyInfo: '16, 24, or 32 bytes' },
-  { value: '3DES', label: '3DES', desc: 'Triple DES', keyInfo: '16 or 24 bytes' },
-  { value: 'DES', label: 'DES', desc: 'Data Encryption Standard', keyInfo: '8 bytes (unsafe)' },
+  { value: '3DES', label: '3DES', desc: 'Triple DES', keyInfo: '16 or 24 bytes (32 or 48 hex chars)' },
+  { value: 'DES', label: 'DES', desc: 'Data Encryption Standard', keyInfo: '8 bytes (16 hex chars) (unsafe)' },
 ];
 
 const modes: { value: SymmetricMode; label: string }[] = [

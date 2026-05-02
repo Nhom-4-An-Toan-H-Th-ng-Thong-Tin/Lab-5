@@ -7,6 +7,17 @@ import type {
 } from '@/types';
 
 /**
+ * Parses a key into a WordArray. Auto-detects hex vs UTF-8 format.
+ * Generated keys are hex-encoded; manual keys may be UTF-8 text.
+ */
+function parseKey(key: string): CryptoJS.lib.WordArray {
+  if (/^[0-9a-fA-F]+$/.test(key) && key.length % 2 === 0) {
+    return CryptoJS.enc.Hex.parse(key);
+  }
+  return CryptoJS.enc.Utf8.parse(key);
+}
+
+/**
  * Encrypts plaintext using the specified symmetric algorithm.
  */
 export function symmetricEncrypt(
@@ -23,7 +34,7 @@ export function symmetricEncrypt(
       return { success: false, error: 'Key is empty.' };
     }
 
-    const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+    const keyWordArray = parseKey(key);
     const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
 
     if (algorithm === 'AES') {
@@ -80,7 +91,7 @@ export function symmetricDecrypt(
       return { success: false, error: 'Key is empty.' };
     }
 
-    const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+    const keyWordArray = parseKey(key);
     const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
     let iv: CryptoJS.lib.WordArray | undefined;
     let rawCiphertext: string;
@@ -164,7 +175,7 @@ export function generateSymmetricKey(options: KeyGenerationOptions): string {
   }
 
   const randomBytes = CryptoJS.lib.WordArray.random(byteCount);
-  return randomBytes.toString(CryptoJS.enc.Utf8);
+  return randomBytes.toString(CryptoJS.enc.Hex);
 }
 
 /**
