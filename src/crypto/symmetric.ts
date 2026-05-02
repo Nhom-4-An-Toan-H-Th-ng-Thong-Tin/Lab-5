@@ -34,6 +34,15 @@ export function symmetricEncrypt(
       return { success: false, error: 'Key is empty.' };
     }
 
+    const keyBytes = parseKey(key).sigBytes;
+    const expected = getExpectedKeySize(algorithm);
+    if (keyBytes !== expected) {
+      return {
+        success: false,
+        error: `Invalid key length for ${algorithm}: expected ${expected} bytes, got ${keyBytes} bytes.`
+      };
+    }
+
     const keyWordArray = parseKey(key);
     const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
 
@@ -89,6 +98,15 @@ export function symmetricDecrypt(
     }
     if (!key.trim()) {
       return { success: false, error: 'Key is empty.' };
+    }
+
+    const keyBytes = parseKey(key).sigBytes;
+    const expected = getExpectedKeySize(algorithm);
+    if (keyBytes !== expected) {
+      return {
+        success: false,
+        error: `Invalid key length for ${algorithm}: expected ${expected} bytes, got ${keyBytes} bytes.`
+      };
     }
 
     const keyWordArray = parseKey(key);
