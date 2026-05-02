@@ -36,7 +36,7 @@ export function symmetricEncrypt(
 
     const keyBytes = parseKey(key).sigBytes;
     const expectedMin = getExpectedKeySize(algorithm);
-    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
+    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
     if (!valid) {
       const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
@@ -104,7 +104,7 @@ export function symmetricDecrypt(
 
     const keyBytes = parseKey(key).sigBytes;
     const expectedMin = getExpectedKeySize(algorithm);
-    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
+    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
     if (!valid) {
       const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
@@ -206,7 +206,7 @@ export function generateSymmetricKey(options: KeyGenerationOptions): string {
 export function validateSymmetricKey(algorithm: SymmetricAlgorithm, key: string): boolean {
   const keyBytes = parseKey(key).sigBytes;
   const expectedMin = getExpectedKeySize(algorithm);
-  return keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
+  return keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
 }
 
 /**
