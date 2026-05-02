@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header, Footer, MainMenu } from '@/components/layout';
 import { SymmetricPage, AsymmetricPage, HashPage } from '@/pages';
+import { symmetricEncrypt, symmetricDecrypt, generateSymmetricKey } from '@/crypto/symmetric';
 
 export default function App() {
   return (
@@ -14,18 +15,17 @@ export default function App() {
               path="/symmetric"
               element={
                 <SymmetricPage
-                  onEncrypt={(_algo, _mode, _pt, key) => {
-                    console.log('[App] encrypt with key length', key.length);
-                    return 'TODO: implement symmetric encryption';
+                  onEncrypt={(algo, mode, pt, key) => {
+                    const result = symmetricEncrypt(algo, pt, key, mode);
+                    if (!result.success) throw new Error(result.error);
+                    return result.data!;
                   }}
-                  onDecrypt={(_algo, _mode, _ct, key) => {
-                    console.log('[App] decrypt with key length', key.length);
-                    return 'TODO: implement symmetric decryption';
+                  onDecrypt={(algo, mode, ct, key) => {
+                    const result = symmetricDecrypt(algo, ct, key, mode);
+                    if (!result.success) throw new Error(result.error);
+                    return result.data!;
                   }}
-                  onGenerateKey={(_algo) => {
-                    console.log('[App] generate key for', _algo);
-                    return 'TODO: implement key generation';
-                  }}
+                  onGenerateKey={(algo) => generateSymmetricKey({ algorithm: algo })}
                 />
               }
             />

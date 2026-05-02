@@ -1,3 +1,4 @@
+import CryptoJS from 'crypto-js';
 import type {
   SymmetricAlgorithm,
   SymmetricMode,
@@ -7,17 +8,56 @@ import type {
 
 /**
  * Encrypts plaintext using the specified symmetric algorithm.
- * TODO: Implement actual encryption logic using crypto-js
  */
 export function symmetricEncrypt(
-  _algorithm: SymmetricAlgorithm,
-  _plaintext: string,
-  _key: string,
-  _mode: SymmetricMode = 'CBC'
+  algorithm: SymmetricAlgorithm,
+  plaintext: string,
+  key: string,
+  mode: SymmetricMode = 'CBC'
 ): SymmetricResult {
   try {
-    console.log(`[symmetricEncrypt] encrypting...`);
-    return { success: false, error: 'Encryption logic not yet implemented.' };
+    if (!plaintext.trim()) {
+      return { success: false, error: 'Plaintext is empty.' };
+    }
+    if (!key.trim()) {
+      return { success: false, error: 'Key is empty.' };
+    }
+
+    const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+    const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
+
+    if (algorithm === 'AES') {
+      // TODO: Implement AES encryption
+      return { success: false, error: 'AES encryption not yet implemented.' };
+    }
+
+    if (algorithm === 'DES') {
+      const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(8) : undefined;
+      const encrypted = CryptoJS.DES.encrypt(plaintext, keyWordArray, {
+        iv,
+        mode: cryptoMode,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+      if (mode === 'CBC' && iv) {
+        return { success: true, data: iv.toString(CryptoJS.enc.Hex) + encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+      }
+      return { success: true, data: encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+    }
+
+    if (algorithm === '3DES') {
+      const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(8) : undefined;
+      const encrypted = CryptoJS.TripleDES.encrypt(plaintext, keyWordArray, {
+        iv,
+        mode: cryptoMode,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+      if (mode === 'CBC' && iv) {
+        return { success: true, data: iv.toString(CryptoJS.enc.Hex) + encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+      }
+      return { success: true, data: encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+    }
+
+    return { success: false, error: `Unsupported algorithm: ${algorithm}` };
   } catch (err) {
     return { success: false, error: String(err) };
   }
@@ -25,17 +65,78 @@ export function symmetricEncrypt(
 
 /**
  * Decrypts ciphertext using the specified symmetric algorithm.
- * TODO: Implement actual decryption logic using crypto-js
  */
 export function symmetricDecrypt(
-  _algorithm: SymmetricAlgorithm,
-  _ciphertext: string,
-  _key: string,
-  _mode: SymmetricMode = 'CBC'
+  algorithm: SymmetricAlgorithm,
+  ciphertext: string,
+  key: string,
+  mode: SymmetricMode = 'CBC'
 ): SymmetricResult {
   try {
-    console.log(`[symmetricDecrypt] decrypting...`);
-    return { success: false, error: 'Decryption logic not yet implemented.' };
+    if (!ciphertext.trim()) {
+      return { success: false, error: 'Ciphertext is empty.' };
+    }
+    if (!key.trim()) {
+      return { success: false, error: 'Key is empty.' };
+    }
+
+    const keyWordArray = CryptoJS.enc.Utf8.parse(key);
+    const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
+    let iv: CryptoJS.lib.WordArray | undefined;
+    let rawCiphertext: string;
+
+    if (mode === 'CBC') {
+      if (ciphertext.length < 16) {
+        return { success: false, error: 'Ciphertext is too short. Missing IV or invalid format.' };
+      }
+      iv = CryptoJS.enc.Hex.parse(ciphertext.substring(0, 16));
+      rawCiphertext = ciphertext.substring(16);
+    } else {
+      rawCiphertext = ciphertext;
+    }
+
+    const ciphertextWordArray = CryptoJS.enc.Hex.parse(rawCiphertext);
+
+    if (algorithm === 'AES') {
+      // TODO: Implement AES decryption
+      return { success: false, error: 'AES decryption not yet implemented.' };
+    }
+
+    if (algorithm === 'DES') {
+      const decrypted = CryptoJS.DES.decrypt(
+        { ciphertext: ciphertextWordArray } as CryptoJS.lib.CipherParams,
+        keyWordArray,
+        {
+          iv,
+          mode: cryptoMode,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+      const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+      if (!plaintext) {
+        return { success: false, error: 'Decryption failed. Wrong key or corrupted ciphertext.' };
+      }
+      return { success: true, data: plaintext };
+    }
+
+    if (algorithm === '3DES') {
+      const decrypted = CryptoJS.TripleDES.decrypt(
+        { ciphertext: ciphertextWordArray } as CryptoJS.lib.CipherParams,
+        keyWordArray,
+        {
+          iv,
+          mode: cryptoMode,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+      const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+      if (!plaintext) {
+        return { success: false, error: 'Decryption failed. Wrong key or corrupted ciphertext.' };
+      }
+      return { success: true, data: plaintext };
+    }
+
+    return { success: false, error: `Unsupported algorithm: ${algorithm}` };
   } catch (err) {
     return { success: false, error: String(err) };
   }
@@ -43,15 +144,27 @@ export function symmetricDecrypt(
 
 /**
  * Generates a random key for the specified symmetric algorithm.
- * TODO: Implement key generation
  */
 export function generateSymmetricKey(options: KeyGenerationOptions): string {
-  // TODO: Implement key generation
-  // DES: 8 bytes
-  // 3DES: 24 bytes
-  // AES-128: 16 bytes, AES-192: 24 bytes, AES-256: 32 bytes
-  console.log(`[generateSymmetricKey] ${options.algorithm}`);
-  return '';
+  const { algorithm } = options;
+  let byteCount: number;
+
+  switch (algorithm) {
+    case 'DES':
+      byteCount = 8;
+      break;
+    case '3DES':
+      byteCount = 24;
+      break;
+    case 'AES':
+      byteCount = 16;
+      break;
+    default:
+      byteCount = 16;
+  }
+
+  const randomBytes = CryptoJS.lib.WordArray.random(byteCount);
+  return randomBytes.toString(CryptoJS.enc.Utf8);
 }
 
 /**

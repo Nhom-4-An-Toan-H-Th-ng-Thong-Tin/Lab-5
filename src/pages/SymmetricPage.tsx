@@ -42,8 +42,12 @@ export default function SymmetricPage({ onEncrypt, onDecrypt, onGenerateKey }: S
     setResult('');
     if (!plaintext.trim()) { setError('Please enter plaintext.'); return; }
     if (!key.trim()) { setError('Please enter or generate a secret key.'); return; }
-    const output = onEncrypt(algorithm, mode, plaintext, key);
-    setResult(output);
+    try {
+      const output = onEncrypt(algorithm, mode, plaintext, key);
+      setResult(output);
+    } catch (err) {
+      setError(String(err));
+    }
   };
 
   const handleDecrypt = () => {
@@ -51,8 +55,12 @@ export default function SymmetricPage({ onEncrypt, onDecrypt, onGenerateKey }: S
     setResult('');
     if (!decryptInput.trim()) { setError('Please enter ciphertext.'); return; }
     if (!decryptKey.trim()) { setError('Please enter the secret key.'); return; }
-    const output = onDecrypt(algorithm, mode, decryptInput, decryptKey);
-    setResult(output);
+    try {
+      const output = onDecrypt(algorithm, mode, decryptInput, decryptKey);
+      setResult(output);
+    } catch (err) {
+      setError(String(err));
+    }
   };
 
   const handleCopy = () => {
