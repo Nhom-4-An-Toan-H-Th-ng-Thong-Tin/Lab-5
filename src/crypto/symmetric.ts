@@ -35,11 +35,13 @@ export function symmetricEncrypt(
     }
 
     const keyBytes = parseKey(key).sigBytes;
-    const expected = getExpectedKeySize(algorithm);
-    if (keyBytes !== expected) {
+    const expectedMin = getExpectedKeySize(algorithm);
+    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
+    if (!valid) {
+      const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
         success: false,
-        error: `Invalid key length for ${algorithm}: expected ${expected} bytes, got ${keyBytes} bytes.`
+        error: `Invalid key length for ${algorithm}: expected ${minStr} bytes, got ${keyBytes} bytes.`
       };
     }
 
@@ -101,11 +103,13 @@ export function symmetricDecrypt(
     }
 
     const keyBytes = parseKey(key).sigBytes;
-    const expected = getExpectedKeySize(algorithm);
-    if (keyBytes !== expected) {
+    const expectedMin = getExpectedKeySize(algorithm);
+    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
+    if (!valid) {
+      const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
         success: false,
-        error: `Invalid key length for ${algorithm}: expected ${expected} bytes, got ${keyBytes} bytes.`
+        error: `Invalid key length for ${algorithm}: expected ${minStr} bytes, got ${keyBytes} bytes.`
       };
     }
 
@@ -200,14 +204,9 @@ export function generateSymmetricKey(options: KeyGenerationOptions): string {
  * Validates that a key matches the expected length for an algorithm.
  */
 export function validateSymmetricKey(algorithm: SymmetricAlgorithm, key: string): boolean {
-  const keyBytes = new TextEncoder().encode(key);
-  const len = keyBytes.length;
-  switch (algorithm) {
-    case 'DES':   return len === 8;
-    case '3DES':  return len === 24 || len === 16;
-    case 'AES':   return len === 16 || len === 24 || len === 32;
-    default:      return false;
-  }
+  const keyBytes = parseKey(key).sigBytes;
+  const expectedMin = getExpectedKeySize(algorithm);
+  return keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 24);
 }
 
 /**
