@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Key, LockKeyhole, Hash, ChevronRight, Shield } from 'lucide-react';
 
 const menuItems = [
-  { path: '/symmetric', label: 'Symmetric Encryption', icon: '🔑', color: '#7c3aed' },
-  { path: '/asymmetric', label: 'Asymmetric Encryption', icon: '🔐', color: '#0891b2' },
-  { path: '/hash', label: 'Hash Functions', icon: '📋', color: '#059669' },
+  { path: '/symmetric', label: 'Symmetric Encryption', Icon: Key, color: '#7c3aed' },
+  { path: '/asymmetric', label: 'Asymmetric Encryption', Icon: LockKeyhole, color: '#0891b2' },
+  { path: '/hash', label: 'Hash Functions', Icon: Hash, color: '#059669' },
 ];
 
 export default function MainMenu() {
@@ -12,7 +13,9 @@ export default function MainMenu() {
   return (
     <div className="main-menu">
       <div className="menu-intro">
-        <div className="menu-icon-large">🔐</div>
+        <div className="menu-icon-large">
+          <Shield size={64} strokeWidth={1.5} />
+        </div>
         <h1 className="menu-title">Cryptography Toolkit</h1>
         <p className="menu-desc">
           A practical toolkit for symmetric encryption, asymmetric encryption, and hash functions.
@@ -27,7 +30,9 @@ export default function MainMenu() {
               className={`menu-card ${location.pathname === item.path ? 'active' : ''}`}
               style={{ '--card-accent': item.color } as React.CSSProperties}
             >
-              <div className="menu-card-icon">{item.icon}</div>
+              <div className="menu-card-icon">
+                <item.Icon size={28} strokeWidth={1.75} color={item.color} />
+              </div>
               <div className="menu-card-content">
                 <h2 className="menu-card-title">{item.label}</h2>
                 <p className="menu-card-desc">
@@ -36,7 +41,9 @@ export default function MainMenu() {
                   {item.path === '/hash' && 'MD5 and SHA-256 hash computation'}
                 </p>
               </div>
-              <div className="menu-card-arrow">→</div>
+              <div className="menu-card-arrow">
+                <ChevronRight size={20} strokeWidth={2} />
+              </div>
             </div>
           </Link>
         ))}
@@ -55,9 +62,10 @@ export default function MainMenu() {
         }
 
         .menu-icon-large {
-          font-size: 4rem;
           margin-bottom: 1rem;
-          display: block;
+          display: flex;
+          justify-content: center;
+          color: var(--color-accent-light);
         }
 
         .menu-title {
@@ -130,7 +138,6 @@ export default function MainMenu() {
         }
 
         .menu-card-icon {
-          font-size: 2.25rem;
           flex-shrink: 0;
           width: 60px;
           height: 60px;
@@ -158,10 +165,11 @@ export default function MainMenu() {
         }
 
         .menu-card-arrow {
-          font-size: 1.25rem;
           color: var(--color-text-muted);
           flex-shrink: 0;
           transition: transform var(--transition-fast), color var(--transition-fast);
+          display: flex;
+          align-items: center;
         }
 
         .menu-card:hover .menu-card-arrow {

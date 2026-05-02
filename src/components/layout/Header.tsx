@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 
 const navLinks = [
   { path: '/', label: 'Home' },
@@ -14,7 +15,7 @@ export default function Header() {
     <header className="header">
       <div className="header-inner">
         <Link to="/" className="header-brand">
-          <span className="header-brand-icon">🔐</span>
+          <Shield className="header-brand-icon" size={20} strokeWidth={2.5} />
           <span className="header-brand-text">Crypto Toolkit</span>
         </Link>
 
@@ -60,7 +61,8 @@ export default function Header() {
         }
 
         .header-brand-icon {
-          font-size: 1.5rem;
+          color: var(--color-accent-light);
+          flex-shrink: 0;
         }
 
         .header-brand-text {
