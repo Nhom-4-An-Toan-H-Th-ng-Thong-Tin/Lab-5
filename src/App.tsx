@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header, Footer, MainMenu } from '@/components/layout';
 import { SymmetricPage, AsymmetricPage, HashPage } from '@/pages';
 import { symmetricEncrypt, symmetricDecrypt, generateSymmetricKey } from '@/crypto/symmetric';
+import { computeHash } from '@/crypto/hash';
 
 export default function App() {
   return (
@@ -56,8 +57,9 @@ export default function App() {
               element={
                 <HashPage
                   onComputeHash={(algo, text) => {
-                    console.log('[App] compute', algo, 'hash of', text);
-                    return 'TODO: implement hash computation';
+                    const result = computeHash(algo, text);
+                    if (!result.success) throw new Error(result.error);
+                    return result.digest!;
                   }}
                 />
               }
