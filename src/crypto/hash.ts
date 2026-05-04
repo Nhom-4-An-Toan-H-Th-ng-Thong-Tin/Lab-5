@@ -1,14 +1,36 @@
-import CryptoJS from 'crypto-js';
 import type { HashAlgorithm, HashResult } from '@/types';
+import CryptoJS from 'crypto-js';
+/**
+ * Computes the hash digest of input text using the specified algorithm.
+ * TODO: Implement using crypto-js
+ */
 
 export function computeHash(algorithm: HashAlgorithm, text: string): HashResult {
   try {
-    if (algorithm === 'SHA-256') {
-      const digest = CryptoJS.SHA256(text).toString(CryptoJS.enc.Hex);
-      return { success: true, digest };
+    if (!text.trim()) {
+      return { success: false, error: 'Input text is empty.' };
     }
 
-    return { success: false, error: 'Hash computation not yet implemented.' };
+    if (algorithm === 'MD5') {
+      const hash = CryptoJS.MD5(text);
+      return {
+        success: true,
+        digest: hash.toString(CryptoJS.enc.Hex),
+      };
+    }
+
+    if (algorithm === 'SHA-256') {
+      return {
+        success: false,
+        error: 'SHA-256 hashing not yet implemented.',
+      };
+    }
+
+    return {
+      success: false,
+      error: `Unsupported algorithm: ${algorithm}`,
+    };
+
   } catch (err) {
     return { success: false, error: String(err) };
   }
