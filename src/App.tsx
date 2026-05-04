@@ -2,7 +2,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header, Footer, MainMenu } from '@/components/layout';
 import { SymmetricPage, AsymmetricPage, HashPage } from '@/pages';
 import { symmetricEncrypt, symmetricDecrypt, generateSymmetricKey } from '@/crypto/symmetric';
-import { computeHash } from './crypto/hash';   // ← Import dòng này
+import { computeHash } from './crypto/hash';
+
+import { generateRSAKeyPair, rsaEncrypt, rsaDecrypt } from '@/crypto/asymmetric';
 
 export default function App() {
   return (
@@ -12,6 +14,7 @@ export default function App() {
         <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<MainMenu />} />
+            
             <Route
               path="/symmetric"
               element={
@@ -30,28 +33,38 @@ export default function App() {
                 />
               }
             />
+            
             <Route
               path="/asymmetric"
               element={
                 <AsymmetricPage
                   onGenerateKeyPair={(bits) => {
                     console.log('[App] generate RSA key pair', bits, 'bits');
-                    return {
-                      publicKey: 'TODO: generate RSA public key',
-                      privateKey: 'TODO: generate RSA private key',
-                    };
+                    // Gọi hàm sinh khóa RSA thực tế
+                    const result = generateRSAKeyPair(bits);
+                    if (!result.success || !result.keyPair) {
+                      throw new Error(result.error || 'Lỗi khi tạo cặp khóa RSA');
+                    }
+                    return result.keyPair;
                   }}
-                  onEncrypt={(_pt, pubKey) => {
+                  onEncrypt={(pt, pubKey) => {
                     console.log('[App] RSA encrypt with pubKey length', pubKey.length);
-                    return 'TODO: implement RSA encryption';
+                    // Gọi hàm mã hóa RSA thực tế
+                    const result = rsaEncrypt(pt, pubKey);
+                    if (!result.success) throw new Error(result.error);
+                    return result.data!;
                   }}
-                  onDecrypt={(_ct, privKey) => {
+                  onDecrypt={(ct, privKey) => {
                     console.log('[App] RSA decrypt with privKey length', privKey.length);
-                    return 'TODO: implement RSA decryption';
+                    // Gọi hàm giải mã RSA thực tế
+                    const result = rsaDecrypt(ct, privKey);
+                    if (!result.success) throw new Error(result.error);
+                    return result.data!;
                   }}
                 />
               }
             />
+            
             <Route
               path="/hash"
               element={

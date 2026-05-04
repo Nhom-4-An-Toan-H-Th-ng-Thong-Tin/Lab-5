@@ -35,13 +35,25 @@ export function symmetricEncrypt(
     }
 
     const keyBytes = parseKey(key).sigBytes;
-    const expectedMin = getExpectedKeySize(algorithm);
-    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
+    
+    // Validate key length for specific algorithms
+    let valid = false;
+    let expectedStr = '';
+    if (algorithm === 'AES') {
+      valid = [16, 24, 32].includes(keyBytes);
+      expectedStr = '16, 24, or 32';
+    } else if (algorithm === '3DES') {
+      valid = [16, 24].includes(keyBytes);
+      expectedStr = '16 or 24';
+    } else if (algorithm === 'DES') {
+      valid = keyBytes === 8;
+      expectedStr = '8';
+    }
+
     if (!valid) {
-      const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
         success: false,
-        error: `Invalid key length for ${algorithm}: expected ${minStr} bytes, got ${keyBytes} bytes.`
+        error: `Invalid key length for ${algorithm}: expected ${expectedStr} bytes, got ${keyBytes} bytes.`
       };
     }
 
@@ -49,11 +61,21 @@ export function symmetricEncrypt(
     const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
 
     if (algorithm === 'AES') {
-      // TODO: Implement AES encryption
-      return { success: false, error: 'AES encryption not yet implemented.' };
+      // AES block size is 16 bytes
+      const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(16) : undefined;
+      const encrypted = CryptoJS.AES.encrypt(plaintext, keyWordArray, {
+        iv,
+        mode: cryptoMode,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+      if (mode === 'CBC' && iv) {
+        return { success: true, data: iv.toString(CryptoJS.enc.Hex) + encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+      }
+      return { success: true, data: encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
     }
 
     if (algorithm === 'DES') {
+      // DES block size is 8 bytes
       const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(8) : undefined;
       const encrypted = CryptoJS.DES.encrypt(plaintext, keyWordArray, {
         iv,
@@ -67,6 +89,7 @@ export function symmetricEncrypt(
     }
 
     if (algorithm === '3DES') {
+      // 3DES block size is 8 bytes
       const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(8) : undefined;
       const encrypted = CryptoJS.TripleDES.encrypt(plaintext, keyWordArray, {
         iv,
@@ -103,13 +126,25 @@ export function symmetricDecrypt(
     }
 
     const keyBytes = parseKey(key).sigBytes;
-    const expectedMin = getExpectedKeySize(algorithm);
-    const valid = keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
+    
+    // Validate key length
+    let valid = false;
+    let expectedStr = '';
+    if (algorithm === 'AES') {
+      valid = [16, 24, 32].includes(keyBytes);
+      expectedStr = '16, 24, or 32';
+    } else if (algorithm === '3DES') {
+      valid = [16, 24].includes(keyBytes);
+      expectedStr = '16 or 24';
+    } else if (algorithm === 'DES') {
+      valid = keyBytes === 8;
+      expectedStr = '8';
+    }
+
     if (!valid) {
-      const minStr = algorithm === '3DES' ? '16 or 24' : `${expectedMin}`;
       return {
         success: false,
-        error: `Invalid key length for ${algorithm}: expected ${minStr} bytes, got ${keyBytes} bytes.`
+        error: `Invalid key length for ${algorithm}: expected ${expectedStr} bytes, got ${keyBytes} bytes.`
       };
     }
 
@@ -119,11 +154,13 @@ export function symmetricDecrypt(
     let rawCiphertext: string;
 
     if (mode === 'CBC') {
-      if (ciphertext.length < 16) {
+      // AES block size is 16 bytes (32 hex chars). DES/3DES is 8 bytes (16 hex chars)
+      const ivHexLength = algorithm === 'AES' ? 32 : 16;
+      if (ciphertext.length < ivHexLength) {
         return { success: false, error: 'Ciphertext is too short. Missing IV or invalid format.' };
       }
-      iv = CryptoJS.enc.Hex.parse(ciphertext.substring(0, 16));
-      rawCiphertext = ciphertext.substring(16);
+      iv = CryptoJS.enc.Hex.parse(ciphertext.substring(0, ivHexLength));
+      rawCiphertext = ciphertext.substring(ivHexLength);
     } else {
       rawCiphertext = ciphertext;
     }
@@ -131,8 +168,20 @@ export function symmetricDecrypt(
     const ciphertextWordArray = CryptoJS.enc.Hex.parse(rawCiphertext);
 
     if (algorithm === 'AES') {
-      // TODO: Implement AES decryption
-      return { success: false, error: 'AES decryption not yet implemented.' };
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext: ciphertextWordArray } as CryptoJS.lib.CipherParams,
+        keyWordArray,
+        {
+          iv,
+          mode: cryptoMode,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+      const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+      if (!plaintext) {
+        return { success: false, error: 'Decryption failed. Wrong key or corrupted ciphertext.' };
+      }
+      return { success: true, data: plaintext };
     }
 
     if (algorithm === 'DES') {
@@ -190,7 +239,7 @@ export function generateSymmetricKey(options: KeyGenerationOptions): string {
       byteCount = 24;
       break;
     case 'AES':
-      byteCount = 16;
+      byteCount = 32; // Defaulting to AES-256 for maximum security
       break;
     default:
       byteCount = 16;
@@ -205,17 +254,19 @@ export function generateSymmetricKey(options: KeyGenerationOptions): string {
  */
 export function validateSymmetricKey(algorithm: SymmetricAlgorithm, key: string): boolean {
   const keyBytes = parseKey(key).sigBytes;
-  const expectedMin = getExpectedKeySize(algorithm);
-  return keyBytes === expectedMin || (algorithm === '3DES' && keyBytes === 16);
+  if (algorithm === 'AES') return [16, 24, 32].includes(keyBytes);
+  if (algorithm === '3DES') return [16, 24].includes(keyBytes);
+  return keyBytes === 8;
 }
 
 /**
  * Returns the expected key size in bytes for a given algorithm.
+ * Note: AES supports 16, 24, 32. This returns the default recommended.
  */
 export function getExpectedKeySize(algorithm: SymmetricAlgorithm): number {
   switch (algorithm) {
     case 'DES':   return 8;
     case '3DES':  return 24;
-    case 'AES':   return 16;
+    case 'AES':   return 32; // AES-256 is recommended
   }
 }
