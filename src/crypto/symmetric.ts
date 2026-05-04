@@ -49,8 +49,17 @@ export function symmetricEncrypt(
     const cryptoMode = mode === 'CBC' ? CryptoJS.mode.CBC : CryptoJS.mode.ECB;
 
     if (algorithm === 'AES') {
-      // TODO: Implement AES encryption
-      return { success: false, error: 'AES encryption not yet implemented.' };
+      // Đã thêm logic mã hóa AES (IV của AES là 16 bytes)
+      const iv = mode === 'CBC' ? CryptoJS.lib.WordArray.random(16) : undefined;
+      const encrypted = CryptoJS.AES.encrypt(plaintext, keyWordArray, {
+        iv,
+        mode: cryptoMode,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+      if (mode === 'CBC' && iv) {
+        return { success: true, data: iv.toString(CryptoJS.enc.Hex) + encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
+      }
+      return { success: true, data: encrypted.ciphertext.toString(CryptoJS.enc.Hex) };
     }
 
     if (algorithm === 'DES') {
@@ -131,8 +140,32 @@ export function symmetricDecrypt(
     const ciphertextWordArray = CryptoJS.enc.Hex.parse(rawCiphertext);
 
     if (algorithm === 'AES') {
-      // TODO: Implement AES decryption
-      return { success: false, error: 'AES decryption not yet implemented.' };
+      // Định nghĩa lại IV và Ciphertext vì AES dùng IV 16 bytes (32 ký tự Hex) thay vì 8 bytes như DES
+      let aesIv = iv;
+      let aesCiphertextWordArray = ciphertextWordArray;
+
+      if (mode === 'CBC') {
+        if (ciphertext.length < 32) {
+          return { success: false, error: 'Ciphertext is too short. Missing IV or invalid format for AES.' };
+        }
+        aesIv = CryptoJS.enc.Hex.parse(ciphertext.substring(0, 32));
+        aesCiphertextWordArray = CryptoJS.enc.Hex.parse(ciphertext.substring(32));
+      }
+
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext: aesCiphertextWordArray } as CryptoJS.lib.CipherParams,
+        keyWordArray,
+        {
+          iv: aesIv,
+          mode: cryptoMode,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      );
+      const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
+      if (!plaintext) {
+        return { success: false, error: 'Decryption failed. Wrong key or corrupted ciphertext.' };
+      }
+      return { success: true, data: plaintext };
     }
 
     if (algorithm === 'DES') {
