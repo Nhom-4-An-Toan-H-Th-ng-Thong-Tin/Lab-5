@@ -20,9 +20,10 @@ export function computeHash(algorithm: HashAlgorithm, text: string): HashResult 
     }
 
     if (algorithm === 'SHA-256') {
+      const hash = CryptoJS.SHA256(text);
       return {
-        success: false,
-        error: 'SHA-256 hashing not yet implemented.',
+        success: true,
+        digest: hash.toString(CryptoJS.enc.Hex),
       };
     }
 
