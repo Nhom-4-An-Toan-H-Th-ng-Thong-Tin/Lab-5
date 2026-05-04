@@ -1,36 +1,44 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface AsymmetricPageProps {
-  onGenerateKeyPair: (bits: number) => { publicKey: string; privateKey: string };
-  onEncrypt: (plaintext: string, publicKey: string) => string;
-  onDecrypt: (ciphertext: string, privateKey: string) => string;
+  onGenerateKeyPair: (bits: number) => RSAKeyPairResult;
+  onEncrypt: (plaintext: string, publicKey: string) => AsymmetricResult;
+  onDecrypt: (ciphertext: string, privateKey: string) => AsymmetricResult;
 }
 
-export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt }: AsymmetricPageProps) {
-  const [publicKey, setPublicKey] = useState('');
-  const [privateKey, setPrivateKey] = useState('');
+export default function AsymmetricPage({
+  onGenerateKeyPair,
+  onEncrypt,
+  onDecrypt,
+}: AsymmetricPageProps) {
+  const [publicKey, setPublicKey] = useState("");
+  const [privateKey, setPrivateKey] = useState("");
   const [keyBits, setKeyBits] = useState(2048);
   const [keysGenerated, setKeysGenerated] = useState(false);
 
-  const [plaintext, setPlaintext] = useState('');
-  const [_ciphertext, _setCiphertext] = useState('');
-  const [decryptInput, setDecryptInput] = useState('');
-  const [result, setResult] = useState('');
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'encrypt' | 'decrypt'>('encrypt');
-  const [copiedKey, setCopiedKey] = useState<'public' | 'private' | null>(null);
+  const [plaintext, setPlaintext] = useState("");
+  const [_ciphertext, _setCiphertext] = useState("");
+  const [decryptInput, setDecryptInput] = useState("");
+  const [result, setResult] = useState("");
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"encrypt" | "decrypt">("encrypt");
+  const [copiedKey, setCopiedKey] = useState<"public" | "private" | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleGenerateKeys = () => {
-    setError('');
-    const keys = onGenerateKeyPair(keyBits);
-    setPublicKey(keys.publicKey);
-    setPrivateKey(keys.privateKey);
-    setKeysGenerated(true);
+    setError("");
+    const res = onGenerateKeyPair(keyBits);
+    if (res.success) {
+      setPublicKey(res.publicKey || "");
+      setPrivateKey(res.privateKey || "");
+      setKeysGenerated(true);
+    } else {
+      setError(res.error || "Error");
+    }
   };
 
-  const handleCopyKey = (type: 'public' | 'private') => {
-    const text = type === 'public' ? publicKey : privateKey;
+  const handleCopyKey = (type: "public" | "private") => {
+    const text = type === "public" ? publicKey : privateKey;
     navigator.clipboard.writeText(text).then(() => {
       setCopiedKey(type);
       setTimeout(() => setCopiedKey(null), 2000);
@@ -38,21 +46,42 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
   };
 
   const handleEncrypt = () => {
-    setError('');
-    setResult('');
-    if (!keysGenerated) { setError('Please generate RSA key pair first.'); return; }
-    if (!plaintext.trim()) { setError('Please enter plaintext.'); return; }
+    setError("");
+    setResult("");
+    if (!keysGenerated) {
+      setError("Please generate RSA key pair first.");
+      return;
+    }
+    if (!plaintext.trim()) {
+      setError("Please enter plaintext.");
+      return;
+    }
     const output = onEncrypt(plaintext, publicKey);
-    setResult(output);
+    if (output && output.success) {
+      setResult(output.data || "");
+    } else {
+      setError(output?.error || "Encryption failed");
+    }
   };
 
   const handleDecrypt = () => {
-    setError('');
-    setResult('');
-    if (!keysGenerated) { setError('Please generate RSA key pair first.'); return; }
-    if (!decryptInput.trim()) { setError('Please enter ciphertext.'); return; }
+    setError("");
+    setResult("");
+    if (!keysGenerated) {
+      setError("Please generate RSA key pair first.");
+      return;
+    }
+    if (!decryptInput.trim()) {
+      setError("Please enter ciphertext.");
+      return;
+    }
+
     const output = onDecrypt(decryptInput, privateKey);
-    setResult(output);
+    if (output && output.success) {
+      setResult(output.data || "");
+    } else {
+      setError(output?.error || "Decryption failed");
+    }
   };
 
   const handleCopy = () => {
@@ -64,18 +93,20 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
   };
 
   const handleClear = () => {
-    setResult('');
-    setError('');
-    setPlaintext('');
-    _setCiphertext('');
-    setDecryptInput('');
+    setResult("");
+    setError("");
+    setPlaintext("");
+    _setCiphertext("");
+    setDecryptInput("");
   };
 
   return (
     <div className="page-content">
       <div className="page-header">
         <h1 className="page-title">Asymmetric Encryption</h1>
-        <p className="page-subtitle">RSA encryption using public/private key pairs.</p>
+        <p className="page-subtitle">
+          RSA encryption using public/private key pairs.
+        </p>
       </div>
 
       <div className="card">
@@ -95,7 +126,10 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
             </select>
           </div>
           <div className="key-gen-action">
-            <button className="btn btn-primary btn-lg" onClick={handleGenerateKeys}>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={handleGenerateKeys}
+            >
               Generate Key Pair
             </button>
           </div>
@@ -107,14 +141,14 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
               <div className="flex-between">
                 <span className="key-label">Public Key</span>
                 <button
-                  className={`btn btn-secondary btn-sm ${copiedKey === 'public' ? 'copied' : ''}`}
-                  onClick={() => handleCopyKey('public')}
+                  className={`btn btn-secondary btn-sm ${copiedKey === "public" ? "copied" : ""}`}
+                  onClick={() => handleCopyKey("public")}
                 >
-                  {copiedKey === 'public' ? 'Copied!' : 'Copy'}
+                  {copiedKey === "public" ? "Copied!" : "Copy"}
                 </button>
               </div>
               <div className="key-display" style={{ maxHeight: 160 }}>
-                {publicKey || '(empty)'}
+                {publicKey || "(empty)"}
               </div>
             </div>
 
@@ -122,14 +156,14 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
               <div className="flex-between">
                 <span className="key-label">Private Key</span>
                 <button
-                  className={`btn btn-secondary btn-sm ${copiedKey === 'private' ? 'copied' : ''}`}
-                  onClick={() => handleCopyKey('private')}
+                  className={`btn btn-secondary btn-sm ${copiedKey === "private" ? "copied" : ""}`}
+                  onClick={() => handleCopyKey("private")}
                 >
-                  {copiedKey === 'private' ? 'Copied!' : 'Copy'}
+                  {copiedKey === "private" ? "Copied!" : "Copy"}
                 </button>
               </div>
               <div className="key-display" style={{ maxHeight: 160 }}>
-                {privateKey || '(empty)'}
+                {privateKey || "(empty)"}
               </div>
             </div>
           </div>
@@ -138,20 +172,28 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
 
       <div className="tab-bar">
         <button
-          className={`tab-btn ${activeTab === 'encrypt' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('encrypt'); setResult(''); setError(''); }}
+          className={`tab-btn ${activeTab === "encrypt" ? "active" : ""}`}
+          onClick={() => {
+            setActiveTab("encrypt");
+            setResult("");
+            setError("");
+          }}
         >
           Encryption (Public Key)
         </button>
         <button
-          className={`tab-btn ${activeTab === 'decrypt' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('decrypt'); setResult(''); setError(''); }}
+          className={`tab-btn ${activeTab === "decrypt" ? "active" : ""}`}
+          onClick={() => {
+            setActiveTab("decrypt");
+            setResult("");
+            setError("");
+          }}
         >
           Decryption (Private Key)
         </button>
       </div>
 
-      {activeTab === 'encrypt' ? (
+      {activeTab === "encrypt" ? (
         <div className="card">
           <h2 className="section-title">Encrypt with Public Key</h2>
           <div className="form-group">
@@ -165,10 +207,16 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
             />
           </div>
           <div className="action-row">
-            <button className="btn btn-primary btn-lg" onClick={handleEncrypt} disabled={!keysGenerated}>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={handleEncrypt}
+              disabled={!keysGenerated}
+            >
               Encrypt
             </button>
-            <button className="btn btn-secondary" onClick={handleClear}>Clear</button>
+            <button className="btn btn-secondary" onClick={handleClear}>
+              Clear
+            </button>
           </div>
         </div>
       ) : (
@@ -185,10 +233,16 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
             />
           </div>
           <div className="action-row">
-            <button className="btn btn-primary btn-lg" onClick={handleDecrypt} disabled={!keysGenerated}>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={handleDecrypt}
+              disabled={!keysGenerated}
+            >
               Decrypt
             </button>
-            <button className="btn btn-secondary" onClick={handleClear}>Clear</button>
+            <button className="btn btn-secondary" onClick={handleClear}>
+              Clear
+            </button>
           </div>
         </div>
       )}
@@ -198,19 +252,34 @@ export default function AsymmetricPage({ onGenerateKeyPair, onEncrypt, onDecrypt
       {result && (
         <div className="card result-card">
           <div className="flex-between">
-            <h2 className="section-title" style={{ marginBottom: 0 }}>Result</h2>
-            <span className={`copy-badge ${copied ? 'copied' : ''}`}>
-              {copied ? 'Copied!' : 'Ready'}
+            <h2 className="section-title" style={{ marginBottom: 0 }}>
+              Result
+            </h2>
+            <span className={`copy-badge ${copied ? "copied" : ""}`}>
+              {copied ? "Copied!" : "Ready"}
             </span>
           </div>
-          <div className="result-box" style={{ maxHeight: 200, overflowY: 'auto' }}>
-            <div style={{ width: '100%', wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>{result}</div>
+          <div
+            className="result-box"
+            style={{ maxHeight: 200, overflowY: "auto" }}
+          >
+            <div
+              style={{
+                width: "100%",
+                wordBreak: "break-all",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {result}
+            </div>
           </div>
           <div className="result-actions">
             <button className="btn btn-success btn-sm" onClick={handleCopy}>
-              {copied ? 'Copied!' : 'Copy Result'}
+              {copied ? "Copied!" : "Copy Result"}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={handleClear}>Try Again</button>
+            <button className="btn btn-secondary btn-sm" onClick={handleClear}>
+              Try Again
+            </button>
           </div>
         </div>
       )}
