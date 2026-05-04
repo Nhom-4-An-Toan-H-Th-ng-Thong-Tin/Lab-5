@@ -2,7 +2,6 @@ import type { HashAlgorithm, HashResult } from '@/types';
 import CryptoJS from 'crypto-js';
 /**
  * Computes the hash digest of input text using the specified algorithm.
- * TODO: Implement using crypto-js
  */
 
 export function computeHash(algorithm: HashAlgorithm, text: string): HashResult {
