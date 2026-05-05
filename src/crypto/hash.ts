@@ -19,8 +19,11 @@ export function computeHash(algorithm: HashAlgorithm, text: string): HashResult 
     }
 
     if (algorithm === 'SHA-256') {
-      const digest = CryptoJS.SHA256(text).toString(CryptoJS.enc.Hex);
-      return { success: true, digest };
+      const hash = CryptoJS.SHA256(text);
+      return {
+        success: true,
+        digest: hash.toString(CryptoJS.enc.Hex),
+      };
     }
 
     return {
